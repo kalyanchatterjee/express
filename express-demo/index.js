@@ -1,11 +1,19 @@
-// require('joi') returns a class. Naming conventions for class
-// is that it start with an upper case.
+// require('joi') returns a class. Naming conventions for a class
+// is that it starts with an upper-case letter.
 const Joi = require('joi');
 const express = require("express");
 const app = express();
 
 // enable JSON middleware
 app.use(express.json());
+
+function validateCourse(course_name) {
+    // Validation rules - same as Laravel
+    const schema = {
+        name: Joi.string().min(3).required()
+    };
+    return Joi.validate(course_name, schema);
+}
 
 const courses = [{
         id: 1,
@@ -19,14 +27,14 @@ const courses = [{
         id: 3,
         name: 'course3'
     }
-]
+];
 
 app.get("/", (req, res) => {
     res.send("Hello world");
 });
 
 app.get("/api/courses", (req, res) => {
-    res.send([1, 2, 3]);
+    res.send(courses);
 });
 
 app.get("/api/courses/:id", (req, res) => {
@@ -47,23 +55,14 @@ app.get("/api/posts/:year/:month", (req, res) => {
 
 // POST
 app.post('/api/courses', (req, res) => {
-    // Validation rules - same as Laravel
-    const schema = {
-        name: Joi.string().min(3).required()
-    };
 
-    const result = Joi.validate(req.body, schema);
-    // console.log(result);
+    // Using object destructuring syntax
+    const {
+        error
+    } = validateCourse(req.body);
 
-    // Manual validation
-    // if (!req.body.name || req.body.name.length < 3) {
-    //     res.status(400).send("name is required and should be at least 3 characters");
-    //     return;
-    // }
-
-    if (result.error) {
-        res.status(400).send(result.error.details[0].message);
-        return;
+    if (error) {
+        return res.status(400).send(error.details[0].message);
     }
 
     const course = {
@@ -74,28 +73,46 @@ app.post('/api/courses', (req, res) => {
     res.send(course);
 });
 
+// PUT
 app.put('/api/courses/:id', (req, res) => {
     // Look up the course. 
     // It nonexistent, return 400
     const course = courses.find(c => c.id === parseInt(req.params.id));
     // 404
     if (!course) {
-        res.status(404).send(`The course with id ${req.params.id} was not found.`);
-    } else {
-        const schema = {
-            name: Joi.string().min(3).required()
-        };
+        return res.status(404).send(`The course with id ${req.params.id} was not found.`);
+    }
 
-        const result = Joi.validate(req.body, schema);
-
-        if (result.error) {
-            res.status(400).send(result.error.details[0].message);
-            return;
-        }
+    // result.error
+    const {
+        error
+    } = validateCourse(req.body);
+    if (error) {
+        res.status(400).send(error.details[0].message);
+        return;
     }
 
     // Update the course
     course.name = req.body.name;
+    res.send(course);
+
+});
+
+// DELETE
+app.delete('/api/courses/:id', (req, res) => {
+    // Look up the course. 
+    // It nonexistent, return 400
+    const course = courses.find(c => c.id === parseInt(req.params.id));
+    // 404
+    if (!course) {
+        return res.status(404).send(`The course with id ${req.params.id} was not found.`);
+    }
+
+    // Delete
+    const index = courses.indexOf(course);
+    courses.splice(index, 1);
+
+    // Response
     res.send(course);
 
 });
