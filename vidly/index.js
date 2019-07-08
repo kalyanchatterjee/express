@@ -5,11 +5,22 @@ const Joi = require("@hapi/joi");
 // enable JSON middleware
 app.use(express.json());
 
-const genres = [
-  { id: 1, name: "Comedy" },
-  { id: 2, name: "Action" },
-  { id: 3, name: "Romance" },
-  { id: 4, name: "Kids" }
+const genres = [{
+    id: 1,
+    name: "Comedy"
+  },
+  {
+    id: 2,
+    name: "Action"
+  },
+  {
+    id: 3,
+    name: "Romance"
+  },
+  {
+    id: 4,
+    name: "Kids"
+  }
 ];
 
 // GET
@@ -42,7 +53,9 @@ function validateGenre(genre_name) {
 
 // POST - add a new genre
 app.post("/api/genres", (req, res) => {
-  const { error } = validateGenre(req.body);
+  const {
+    error
+  } = validateGenre(req.body);
   if (error) {
     return res.status(400).send(error.details[0].message);
   }
@@ -67,7 +80,9 @@ app.put("/api/genres/:id", (req, res) => {
   }
 
   // result.error
-  const { error } = validateGenre(req.body);
+  const {
+    error
+  } = validateGenre(req.body);
   if (error) {
     return res.status(400).send(error.details[0].message);
   }

@@ -7,6 +7,12 @@ const app = express();
 // enable JSON middleware
 app.use(express.json());
 
+// Middleware - authentication
+app.use((req, res, next) => {
+    console.log("Authenticating ...");
+    next(); // Important! without next(), the request hangs
+});
+
 function validateCourse(course_name) {
     // Validation rules - same as Laravel
     const schema = {
