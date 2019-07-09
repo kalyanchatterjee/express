@@ -1,127 +1,65 @@
+// The require("debug") returns a function. So we call that
+// function and give it an argument. This argument is an
+// arbitrary namespace, we call it app.startup.
+const startupDebugger = require("debug")("app.startup");
+const dbDebugger = require("debug")("app.db");
+const config = require("config");
 // require('joi') returns a class. Naming conventions for a class
 // is that it starts with an upper-case letter.
-const Joi = require('joi');
+const Joi = require("joi");
+const logger = require("./logger");
+const courses = require("./routes/courses");
+const main = require("./routes/main");
+const authenticator = require("./authenticator");
 const express = require("express");
 const app = express();
 
-// enable JSON middleware
-app.use(express.json());
+console.log(`NODE_ENV : ${process.env.NODE_ENV}`);
+console.log(`app: ${app.get("env")}`);
 
-// Middleware - authentication
-app.use((req, res, next) => {
-    console.log("Authenticating ...");
-    next(); // Important! without next(), the request hangs
-});
+// Configuration
+console.log("Application name: " + config.get("name"));
+console.log("Mail server: " + config.get("mail.host"));
+// app_password is coming from an environment variable called app_password
+console.log("Mail Password: " + config.get("mail.password"));
 
-function validateCourse(course_name) {
-    // Validation rules - same as Laravel
-    const schema = {
-        name: Joi.string().min(3).required()
-    };
-    return Joi.validate(course_name, schema);
+if (app.get("env") === "development") {
+  //   console.log("Development ...");
+  startupDebugger("In development mode");
+} else {
+  console.log("Production...");
 }
 
-const courses = [{
-        id: 1,
-        name: 'course1'
-    },
-    {
-        id: 2,
-        name: 'course2'
-    },
-    {
-        id: 3,
-        name: 'course3'
-    }
-];
+// Setting a view engine
+app.set("view engine", "pug");
+app.set("views", "./views");
 
-app.get("/", (req, res) => {
-    res.send("Hello world");
-});
+// enable JSON middleware
+app.use(express.json()); // populates req.body if there is JSON data
+app.use(
+  express.urlencoded({
+    extended: true
+  })
+);
+app.use(express.static("public"));
+// any route that starts with "/api/courses" use the courses router
+app.use("/api/courses", courses);
+// main routes
+app.use("/", main);
 
-app.get("/api/courses", (req, res) => {
-    res.send(courses);
-});
+// Using custom middleware
+app.use(logger);
+app.use(authenticator);
 
-app.get("/api/courses/:id", (req, res) => {
-    const course = courses.find(c => c.id === parseInt(req.params.id));
-    // 404
-    if (!course) {
-        res.status(404).send(`The course with id ${req.params.id} was not found.`);
-    } else {
-        res.send(course);
-    }
-});
-
-// Route to describe req parameters and query strings
-app.get("/api/posts/:year/:month", (req, res) => {
-    //   res.send(req.params);
-    res.send(req.query);
-});
-
-// POST
-app.post('/api/courses', (req, res) => {
-
-    // Using object destructuring syntax
-    const {
-        error
-    } = validateCourse(req.body);
-
-    if (error) {
-        return res.status(400).send(error.details[0].message);
-    }
-
-    const course = {
-        id: courses.length + 1,
-        name: req.body.name
-    };
-    courses.push(course);
-    res.send(course);
-});
-
-// PUT
-app.put('/api/courses/:id', (req, res) => {
-    // Look up the course. 
-    // It nonexistent, return 400
-    const course = courses.find(c => c.id === parseInt(req.params.id));
-    // 404
-    if (!course) {
-        return res.status(404).send(`The course with id ${req.params.id} was not found.`);
-    }
-
-    // result.error
-    const {
-        error
-    } = validateCourse(req.body);
-    if (error) {
-        res.status(400).send(error.details[0].message);
-        return;
-    }
-
-    // Update the course
-    course.name = req.body.name;
-    res.send(course);
-
-});
-
-// DELETE
-app.delete('/api/courses/:id', (req, res) => {
-    // Look up the course. 
-    // It nonexistent, return 400
-    const course = courses.find(c => c.id === parseInt(req.params.id));
-    // 404
-    if (!course) {
-        return res.status(404).send(`The course with id ${req.params.id} was not found.`);
-    }
-
-    // Delete
-    const index = courses.indexOf(course);
-    courses.splice(index, 1);
-
-    // Response
-    res.send(course);
-
-});
+function validateCourse(course_name) {
+  // Validation rules - same as Laravel
+  const schema = {
+    name: Joi.string()
+      .min(3)
+      .required()
+  };
+  return Joi.validate(course_name, schema);
+}
 
 // Environment variables
 const port = process.env.PORT || 3000;

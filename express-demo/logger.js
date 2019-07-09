@@ -1,6 +1,7 @@
 // Middleware - logging
-function log = (req, res, next) => {
-    console.log("Logging ...");
-    next();
-}
+const log = (req, res, next) => {
+  console.log("Logging ...");
+  next();
+};
+
 module.exports = log;
