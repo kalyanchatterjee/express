@@ -20,7 +20,7 @@
   },
   "homepage": "https://github.com/kalyanchatterjee/express#readme",
   "dependencies": {
-    "@hapi/joi": "^15.1.0",
+    "@hapi/joi": "^15.1.1",
     "express": "^4.17.1",
     "joi": "^14.3.1"
   }
